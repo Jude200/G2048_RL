@@ -17,11 +17,25 @@ class G2048Agent:
     
     def __init__(self, game_manager: GameManager = None, is_training: bool = True):
         
+        # Determine device
+        config_device = training_config.get('device', 'auto')
+        if config_device == 'auto':
+            if torch.cuda.is_available():
+                self.device = torch.device("cuda")
+            elif torch.backends.mps.is_available():
+                self.device = torch.device("mps")
+            else:
+                self.device = torch.device("cpu")
+        else:
+            self.device = torch.device(config_device)
+        
+        print(f"Using device: {self.device}")
+
         # Reference to the game manager
         self.game_manager = game_manager if game_manager else GameManager()
         
-        # Initialize the AI model
-        self.ai_model = Q2048()
+        # Initialize the AI model and move to device
+        self.ai_model = Q2048().to(self.device)
         
         if not is_training:
             self.epsilon = training_config.get('epsilon_end', 0.05)   # No exploration during evaluation
@@ -43,7 +57,7 @@ class G2048Agent:
             return action
         else :
             with torch.no_grad():
-                board_tensor = torch.tensor(game_manager.get_board(), dtype=torch.float32)
+                board_tensor = torch.tensor(game_manager.get_board(), dtype=torch.float32, device=self.device)
                 board_tensor = board_tensor.unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
                 
                 # Get valid moves
@@ -64,8 +78,8 @@ class G2048Agent:
         
     def train_model(self):
 
-        # Target network
-        target_net = Q2048()
+        # Target network and move to device
+        target_net = Q2048().to(self.device)
         
         # Copy weights from policy to target network
         target_net.load_state_dict(self.ai_model.state_dict())
@@ -167,12 +181,14 @@ class G2048Agent:
                 if step_count > 0 and step_count % target_update_freq == 0:
                     target_net.load_state_dict(self.ai_model.state_dict())
                 
-                # Decay epsilon (exponential decay)
-                self.epsilon = max(
+                
+                step_count += 1
+            
+            # Decay epsilon (exponential decay)
+            self.epsilon = max(
                     training_config.get('epsilon_end', 0.05),
                     self.epsilon * training_config.get('epsilon_decay', 0.995)
                 )
-                step_count += 1
 
             if episode % training_config.get('checkpoint_freq', 10) == 0:
                 self.save_model(training_config.get('model_save_path', 'g2048_model.pth'))
@@ -185,8 +201,8 @@ class G2048Agent:
         
         states, actions, rewards, next_states, dones, next_valid_moves = batch
         
-        # Convert to tensors
-        state_batch = torch.tensor(states, dtype=torch.float32)
+        # Convert to tensors on the correct device
+        state_batch = torch.tensor(states, dtype=torch.float32, device=self.device)
         state_batch = state_batch.unsqueeze(1)  # Add channel dimension
         
         # 
@@ -195,20 +211,20 @@ class G2048Agent:
         # 
         actions_numeric = convert_action_to_numeric(actions)  # Convertit ['left', 'right', ...] 
         
-        q_sa = q_values.gather(1, torch.tensor(actions_numeric, dtype=torch.long).unsqueeze(1)).squeeze(1)
+        q_sa = q_values.gather(1, torch.tensor(actions_numeric, dtype=torch.long, device=self.device).unsqueeze(1)).squeeze(1)
         
         with torch.no_grad():
-            next_q = target_net(torch.tensor(next_states, dtype=torch.float32).unsqueeze(1))
+            next_q = target_net(torch.tensor(next_states, dtype=torch.float32, device=self.device).unsqueeze(1))
             
             # Mask invalid moves in next states to avoid overestimation
             # We need valid moves for each state in the batch
-            next_valid_moves_tensor = torch.tensor(next_valid_moves, dtype=torch.bool)
-            next_q[~next_valid_moves_tensor] = -1000.0  # Large negative value to mask
+            next_valid_moves_tensor = torch.tensor(next_valid_moves, dtype=torch.bool, device=self.device)
+            next_q[next_valid_moves_tensor == False] = -1000.0  # Masking manually to be safe with different torch versions
 
             max_next_q = next_q.max(1)[0]
             
-            target = torch.tensor(rewards, dtype=torch.float32) + \
-                     training_config.get('gamma', 0.99) * max_next_q * (1 - torch.tensor(dones, dtype=torch.float32))
+            target = torch.tensor(rewards, dtype=torch.float32, device=self.device) + \
+                     training_config.get('gamma', 0.99) * max_next_q * (1 - torch.tensor(dones, dtype=torch.float32, device=self.device))
         
         # Use Huber Loss (SmoothL1Loss) which is more robust to outliers than MSE
         loss_fn = torch.nn.MSELoss()
@@ -220,13 +236,24 @@ class G2048Agent:
         torch.save(self.ai_model.state_dict(), filepath)
         print(f"Model saved to {filepath}")
 
-    def load_model(self, filepath: str):
-        """Load the model weights from a file."""
-        try:
-            self.ai_model.load_state_dict(torch.load(filepath, map_location=torch.device('cpu')))
-            self.ai_model.eval()
-            print(f"Model loaded from {filepath}")
-        except FileNotFoundError:
-            print(f"Error: Model file not found at {filepath}")
-        except Exception as e:
-            print(f"Error loading model: {e}")
+        def load_model(self, filepath: str):
+
+            """Load the model weights from a file."""
+
+            try:
+
+                self.ai_model.load_state_dict(torch.load(filepath, map_location=self.device))
+
+                self.ai_model.eval()
+
+                print(f"Model loaded from {filepath} onto {self.device}")
+
+            except FileNotFoundError:
+
+                print(f"Error: Model file not found at {filepath}")
+
+            except Exception as e:
+
+                print(f"Error loading model: {e}")
+
+    

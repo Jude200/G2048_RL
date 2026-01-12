@@ -1,5 +1,4 @@
 """Game manager handling game state and logic"""
-
 import numpy as np
 
 
