@@ -174,6 +174,7 @@ class G2048Agent:
                     
                     optimizer.zero_grad()
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.ai_model.parameters(), max_norm=1.0)
                     optimizer.step()
                     # print(f"Episode {episode + 1}, Step {step_count}, Loss: {loss.item():.4f}")
                     losses.append(loss.item())

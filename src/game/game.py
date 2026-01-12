@@ -188,7 +188,7 @@ class GameManager:
         
         reward += 0.01 * weighted_sum
         # print("Reward:", reward)
-        return reward
+        return np.clip(reward, -10, 10)
     
     # def reward(self) -> int:
     #     """Calculate reward based on current board state"""
