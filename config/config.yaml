@@ -2,7 +2,7 @@
 
 # Training Hyperparameters
 training:
-  batch_size: 512
+  batch_size: 32
   learning_rate: 0.001
   episodes: 1000
   train_freq: 4 # Entraîner à chaque step (ou plus souvent)
@@ -13,7 +13,7 @@ training:
   epsilon_start: 1.0
   epsilon_end: 0.05 # Rester un peu explorateur
   epsilon_decay: 0.995 # Décroissance par étape
-  target_update_freq: 100 # Mettre à jour plus souvent
+  target_update_freq: 200 # Mettre à jour plus souvent
   b_min: 5000 # Commencer plus tôt
   device: auto
   model_save_path: "models/g2048_model.pth"

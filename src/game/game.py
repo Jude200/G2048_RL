@@ -141,26 +141,26 @@ class GameManager:
 
         # 3. MONOTONIE (Alignement des tuiles)
         # On vérifie si les valeurs augmentent ou diminuent de manière constante
-        monotonicity = 0
-        # Lignes
-        for i in range(4):
-            row = grid[i, :]
-            # On ne compte que les cases non vides pour la monotonie
-            values = row[row != 0]
-            if len(values) > 1:
-                diffs = np.diff(np.log2(values))
-                if np.all(diffs <= 0) or np.all(diffs >= 0): # Trié dans un sens
-                    monotonicity += sum(np.abs(diffs))
-        # Colonnes
-        for j in range(4):
-            col = grid[:, j]
-            values = col[col != 0]
-            if len(values) > 1:
-                diffs = np.diff(np.log2(values))
-                if np.all(diffs <= 0) or np.all(diffs >= 0):
-                    monotonicity += sum(np.abs(diffs))
+        # monotonicity = 0
+        # # Lignes
+        # for i in range(4):
+        #     row = grid[i, :]
+        #     # On ne compte que les cases non vides pour la monotonie
+        #     values = row[row != 0]
+        #     if len(values) > 1:
+        #         diffs = np.diff(np.log2(values))
+        #         if np.all(diffs <= 0) or np.all(diffs >= 0): # Trié dans un sens
+        #             monotonicity += sum(np.abs(diffs))
+        # # Colonnes
+        # for j in range(4):
+        #     col = grid[:, j]
+        #     values = col[col != 0]
+        #     if len(values) > 1:
+        #         diffs = np.diff(np.log2(values))
+        #         if np.all(diffs <= 0) or np.all(diffs >= 0):
+        #             monotonicity += sum(np.abs(diffs))
         
-        reward += 0.1 * monotonicity
+        # reward += 0.1 * monotonicity
 
         # # 4. MATRICE DE POIDS (Stratégie du coin)
         # # On veut inciter l'IA à mettre les grosses tuiles en haut à gauche
