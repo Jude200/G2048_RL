@@ -138,7 +138,8 @@ class G2048Agent:
         # loops
         for episode in range(episodes):
             
-            print(f">>> Starting episode {episode + 1}/{episodes}")
+            if (episode + 1) % 10 == 0:
+                print(f"Starting episode {episode + 1}/{episodes}, Epsilon: {self.epsilon:.4f}")
             
             # Reset game
             self.game_manager.restart()

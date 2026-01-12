@@ -123,44 +123,44 @@ class GameManager:
     def reward(self):
         # Si le jeu est fini, grosse pénalité
         if self.is_game_over:
-            return -150.0
+            return -10.0
 
         grid = self.board.grid
         reward = 0.0
         
         # 1. RÉCOMPENSE DE FUSION (Basée sur les tuiles fusionnées au dernier tour)
         # On utilise log2 pour ne pas écraser les autres récompenses avec des chiffres énormes
-        # if self.board.merged_values:
-        #     reward += 0.1 * sum([np.log2(v) for v in self.board.merged_values])
+        if self.board.merged_values:
+            reward += 0.1 * sum([np.log2(v) for v in self.board.merged_values])
 
         # 2. BONUS DE CASES VIDES
         # Plus il y a de vide, plus l'agent est récompensé (croissance non-linéaire)
-        # empty_cells = len(self.board._get_empty_cells())
-        # if empty_cells > 0:
-        #     reward += 0.5 * empty_cells # Bonus constant par case vide
+        empty_cells = len(self.board._get_empty_cells())
+        if empty_cells > 0:
+            reward += 0.5 * empty_cells # Bonus constant par case vide
 
         # 3. MONOTONIE (Alignement des tuiles)
         # On vérifie si les valeurs augmentent ou diminuent de manière constante
-        # monotonicity = 0
-        # # Lignes
-        # for i in range(4):
-        #     row = grid[i, :]
-        #     # On ne compte que les cases non vides pour la monotonie
-        #     values = row[row != 0]
-        #     if len(values) > 1:
-        #         diffs = np.diff(np.log2(values))
-        #         if np.all(diffs <= 0) or np.all(diffs >= 0): # Trié dans un sens
-        #             monotonicity += sum(np.abs(diffs))
-        # # Colonnes
-        # for j in range(4):
-        #     col = grid[:, j]
-        #     values = col[col != 0]
-        #     if len(values) > 1:
-        #         diffs = np.diff(np.log2(values))
-        #         if np.all(diffs <= 0) or np.all(diffs >= 0):
-        #             monotonicity += sum(np.abs(diffs))
+        monotonicity = 0
+        # Lignes
+        for i in range(4):
+            row = grid[i, :]
+            # On ne compte que les cases non vides pour la monotonie
+            values = row[row != 0]
+            if len(values) > 1:
+                diffs = np.diff(np.log2(values))
+                if np.all(diffs <= 0) or np.all(diffs >= 0): # Trié dans un sens
+                    monotonicity += sum(np.abs(diffs))
+        # Colonnes
+        for j in range(4):
+            col = grid[:, j]
+            values = col[col != 0]
+            if len(values) > 1:
+                diffs = np.diff(np.log2(values))
+                if np.all(diffs <= 0) or np.all(diffs >= 0):
+                    monotonicity += sum(np.abs(diffs))
         
-        # reward += 0.1 * monotonicity
+        reward += 0.1 * monotonicity
 
         # # 4. MATRICE DE POIDS (Stratégie du coin)
         # # On veut inciter l'IA à mettre les grosses tuiles en haut à gauche
