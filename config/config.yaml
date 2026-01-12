@@ -1,0 +1,29 @@
+# Configuration for Chess RL Agent
+
+# Training Hyperparameters
+training:
+  batch_size: 512
+  learning_rate: 0.001
+  episodes: 1000
+  train_freq: 50 # Entraîner à chaque step (ou plus souvent)
+  checkpoint_freq: 50 # Save model every N epochs
+  replay_buffer_size: 100000 # Augmenter la capacité
+  num_workers: 4
+  gamma: 0.99
+  epsilon_start: 1.0
+  epsilon_end: 0.05 # Rester un peu explorateur
+  epsilon_decay: 0.995 # Décroissance par étape
+  target_update_freq: 100 # Mettre à jour plus souvent
+  b_min: 5000 # Commencer plus tôt
+  device: auto
+  model_save_path: "models/g2048_model.pth"
+
+# Environment Settings
+environment:
+  board_size: 4 # Standard 4x4 board
+
+# Paths
+paths:
+  model_save_dir: "models/"
+  replay_buffer_dir: "data/replay_buffer/"
+  log_dir: "logs/" # Optional: for TensorBoard or other logging
